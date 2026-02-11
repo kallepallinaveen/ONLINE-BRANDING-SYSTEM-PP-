@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" 
+           Name="OnlineBrandingSystem" 
+           Language="1033" 
+           Version="1.0.0.0" 
+           Manufacturer="PeopleWorks" 
+           UpgradeCode="PUT-GUID-HERE">
+
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MediaTemplate />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="OnlineBrandingSystem"/>
+      </Directory>
+    </Directory>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="*">
+        <File Source="$(var.PublishDir)\*" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="MainFeature" Title="OnlineBrandingSystem" Level="1">
+      <ComponentRef Id="MainExecutable"/>
+    </Feature>
+
+  </Product>
+</Wix>

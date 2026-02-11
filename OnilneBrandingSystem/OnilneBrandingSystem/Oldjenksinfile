@@ -1,0 +1,81 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
+        BRANCH        = "master"
+
+        SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
+        BUILD_CONFIG  = "Release"
+
+        MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
+        NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
+
+        ARTIFACT_DIR  = "C:\\Jenkins\\OnlineBranding_Publish"
+        IIS_DIR       = "C:\\inetpub\\wwwroot\\OnlineBranding"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: "${BRANCH}", url: "${GIT_URL}"
+            }
+        }
+
+        stage('Restore NuGet Packages') {
+            steps {
+                bat "\"%NUGET_PATH%\" restore \"%SOLUTION_FILE%\""
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat """
+                "%MSBUILD_PATH%" "%SOLUTION_FILE%" ^
+                /p:Configuration=%BUILD_CONFIG% ^
+                /t:Build
+                """
+            }
+        }
+
+        stage('Publish') {
+    steps {
+        bat """
+        if not exist "%ARTIFACT_DIR%" mkdir "%ARTIFACT_DIR%"
+
+        "%MSBUILD_PATH%" "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj" ^
+        /p:Configuration=%BUILD_CONFIG% ^
+        /p:DeployOnBuild=true ^
+        /p:WebPublishMethod=FileSystem ^
+        /p:PublishUrl=%ARTIFACT_DIR% ^
+        /p:DeleteExistingFiles=true ^
+        /p:AutoParameterizationWebConfigConnectionStrings=false
+        """
+           }
+        }
+
+
+        stage('Deploy') {
+         steps {
+        bat """
+        if not exist "%IIS_DIR%" mkdir "%IIS_DIR%"
+
+        xcopy "%ARTIFACT_DIR%\\*" "%IIS_DIR%\\" /Y /E /I
+        """
+        }
+    }
+
+
+
+    }   // ✅ THIS WAS MISSING (end of stages)
+
+    post {
+        success {
+            echo "✅ Build, Publish, and Deploy completed successfully"
+        }
+        failure {
+            echo "❌ Pipeline failed"
+        }
+    }
+}
