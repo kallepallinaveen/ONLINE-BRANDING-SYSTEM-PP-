@@ -59,17 +59,20 @@ pipeline {
         }
 
         stage('Create MSI Installer') {
-            steps {
-                bat """
-                "%WIX_BIN%\\candle.exe" Installer\\Product.wxs ^
-                -dPublishDir="%PUBLISH_DIR%" ^
-                -out Installer\\Product.wixobj
+    steps {
+        bat """
+        "%WIX_BIN%\\candle.exe" ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
+        -dPublishDir="%PUBLISH_DIR%" ^
+        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj
 
-                "%WIX_BIN%\\light.exe" Installer\\Product.wixobj ^
-                -out "%MSI_OUTPUT%"
-                """
+        "%WIX_BIN%\\light.exe" ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
+        -out "%MSI_OUTPUT%"
+                    """
+                }
             }
-        }
+
 
         stage('Install MSI') {
             steps {
