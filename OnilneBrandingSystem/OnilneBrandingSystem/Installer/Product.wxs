@@ -5,7 +5,7 @@
            Language="1033" 
            Version="1.0.0.0" 
            Manufacturer="PeopleWorks" 
-           UpgradeCode="PUT-GUID-HERE">
+           UpgradeCode="ade581d6-6ab0-440e-aab0-4fc3c7c97d7f">
 
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
