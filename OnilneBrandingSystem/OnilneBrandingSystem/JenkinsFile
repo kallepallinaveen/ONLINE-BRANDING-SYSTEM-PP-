@@ -103,46 +103,46 @@ pipeline {
             }
         }
 
-        stage('Configure IIS Site') {
-            steps {
-                bat """
-                powershell -NoProfile -ExecutionPolicy Bypass -Command "
-
+            stage('Configure IIS Site') {
+               steps {
+                powershell '''
                 Import-Module WebAdministration
 
-                \$siteName = '${SITE_NAME}'
-                \$appPool = '${APP_POOL}'
-                \$physicalPath = '${PUBLISH_DIR}'
-                \$port = ${SITE_PORT}
+                $siteName = "OnlineBrandingSite"
+                $appPool = "OnlineBrandingAppPool"
+                $physicalPath = "C:\\Jenkins\\OnlineBranding_Publish"
+                $port = 8085
 
-                Write-Host 'Checking App Pool...'
+                Write-Host "Checking App Pool..."
 
-                if (!(Test-Path IIS:\\AppPools\\\$appPool)) {
-                    New-WebAppPool -Name \$appPool
-                    Write-Host 'App Pool Created'
-                } else {
-                    Write-Host 'App Pool Already Exists'
+                if (!(Test-Path IIS:\\AppPools\\$appPool)) {
+                    New-WebAppPool -Name $appPool
+                    Write-Host "App Pool Created"
+                }
+                else {
+                    Write-Host "App Pool Already Exists"
                 }
 
-                Write-Host 'Checking Website...'
+                Write-Host "Checking Website..."
 
-                if (!(Test-Path IIS:\\Sites\\\$siteName)) {
-                    New-Website -Name \$siteName `
-                                -Port \$port `
-                                -PhysicalPath \$physicalPath `
-                                -ApplicationPool \$appPool
-                    Write-Host 'Website Created'
-                } else {
-                    Write-Host 'Website Already Exists'
+                if (!(Test-Path IIS:\\Sites\\$siteName)) {
+                    New-Website -Name $siteName `
+                                -Port $port `
+                                -PhysicalPath $physicalPath `
+                                -ApplicationPool $appPool
+                    Write-Host "Website Created"
+                }
+                else {
+                    Write-Host "Website Already Exists"
                 }
 
-                Start-Website -Name \$siteName
+                Start-Website -Name $siteName
 
-                Write-Host 'IIS Configuration Completed Successfully'
-                "
-                """
+                Write-Host "IIS Configuration Completed Successfully"
+                '''
             }
         }
+
 
     }
 
