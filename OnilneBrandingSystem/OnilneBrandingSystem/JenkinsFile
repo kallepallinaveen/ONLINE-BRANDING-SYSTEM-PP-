@@ -77,7 +77,7 @@ pipeline {
         }
 
 
-        stage('Create MSI Installer') {
+                stage('Create MSI Installer') {
             steps {
 
                 script {
@@ -106,10 +106,12 @@ pipeline {
                 "%WIX_BIN%\\light.exe" ^
                 OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
                 OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
+                -b "%PUBLISH_DIR%" ^
                 -out "%MSI_OUTPUT%"
                 """
             }
         }
+
 
         stage('Install MSI') {
             steps {
