@@ -70,11 +70,38 @@ pipeline {
                 /t:Build
                 """
 
-                dir "%PUBLISH_DIR%"
+                bat 'dir "%PUBLISH_DIR%"'
             }
         }
 
-        
+        stage('Create MSI Installer') {
+            steps {
+                bat """
+                "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
+                -cg AppFiles ^
+                -dr INSTALLFOLDER ^
+                -srd ^
+                -gg ^
+                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
+
+                "%WIX_BIN%\\candle.exe" ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
+                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
+
+                "%WIX_BIN%\\light.exe" ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
+                -out "%MSI_OUTPUT%"
+                """
+
+                script {
+                    if (!fileExists(env.MSI_OUTPUT)) {
+                        error "MSI file was not created!"
+                    }
+                }
+            }
+        }
 
         stage('Install MSI') {
             steps {
@@ -83,36 +110,8 @@ pipeline {
                 """
             }
         }
+
     }
-    stage('Create MSI Installer') {
-    steps {
-        bat """
-        "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
-        -cg AppFiles ^
-        -dr INSTALLFOLDER ^
-        -srd ^
-        -gg ^
-        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
-
-        "%WIX_BIN%\\candle.exe" ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
-        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
-
-        "%WIX_BIN%\\light.exe" ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
-        -out "%MSI_OUTPUT%"
-        """
-
-        script {
-            if (!fileExists(env.MSI_OUTPUT)) {
-                error "MSI file was not created!"
-                    }
-                }
-            }
-        }
-
 
     post {
         success {
