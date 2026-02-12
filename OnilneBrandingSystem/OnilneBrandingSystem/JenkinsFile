@@ -1,121 +1,28 @@
-pipeline {
-    agent any
+stage('Create MSI Installer') {
+    steps {
+        bat """
+        "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
+        -cg AppFiles ^
+        -dr INSTALLFOLDER ^
+        -srd ^
+        -gg ^
+        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
 
-    options {
-        skipDefaultCheckout(true)
-    }
+        "%WIX_BIN%\\candle.exe" ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
+        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
 
-    environment {
-        GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
-        BRANCH        = "master"
+        "%WIX_BIN%\\light.exe" ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
+        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
+        -out "%MSI_OUTPUT%"
+        """
 
-        SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
-        PROJECT_FILE  = "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj"
-
-        BUILD_CONFIG  = "Release"
-
-        MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
-        NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
-
-        PUBLISH_DIR   = "C:\\Jenkins\\OnlineBranding_Publish"
-        MSI_OUTPUT    = "C:\\Jenkins\\OnlineBrandingSystem.msi"
-
-        WIX_BIN       = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
-    }
-
-    stages {
-
-        stage('Clean Workspace') {
-            steps {
-                deleteDir()
+        script {
+            if (!fileExists(env.MSI_OUTPUT)) {
+                error "MSI file was not created!"
             }
-        }
-
-        stage('Checkout') {
-            steps {
-                git branch: "${BRANCH}", url: "${GIT_URL}"
-            }
-        }
-
-        stage('Restore NuGet Packages') {
-            steps {
-                bat """
-                "%NUGET_PATH%" restore "%SOLUTION_FILE%"
-                """
-            }
-        }
-
-        stage('Build Solution') {
-            steps {
-                bat """
-                "%MSBUILD_PATH%" "%SOLUTION_FILE%" ^
-                /p:Configuration=%BUILD_CONFIG% ^
-                /t:Rebuild
-                """
-            }
-        }
-
-        stage('Publish Project') {
-            steps {
-                bat """
-                if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
-                mkdir "%PUBLISH_DIR%"
-
-                "%MSBUILD_PATH%" "%PROJECT_FILE%" ^
-                /p:Configuration=%BUILD_CONFIG% ^
-                /p:DeployOnBuild=true ^
-                /p:WebPublishMethod=FileSystem ^
-                /p:PublishUrl="%PUBLISH_DIR%" ^
-                /p:DeleteExistingFiles=true ^
-                /t:Build
-                """
-
-                dir "%PUBLISH_DIR%"
-            }
-        }
-
-        stage('Create MSI Installer') {
-            steps {
-                bat """
-                "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
-                -cg AppFiles ^
-                -dr INSTALLFOLDER ^
-                -srd ^
-                -gg ^
-                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
-
-                "%WIX_BIN%\\candle.exe" ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
-                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
-
-                "%WIX_BIN%\\light.exe" ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
-                -out "%MSI_OUTPUT%"
-                """
-
-                if (!fileExists(env.MSI_OUTPUT)) {
-                    error "MSI file was not created!"
-                }
-            }
-        }
-
-        stage('Install MSI') {
-            steps {
-                bat """
-                msiexec /i "%MSI_OUTPUT%" /quiet /norestart
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Build, Publish, MSI creation, and installation completed successfully"
-        }
-        failure {
-            echo "❌ Pipeline failed"
         }
     }
 }
