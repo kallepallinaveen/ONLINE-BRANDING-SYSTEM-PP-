@@ -56,25 +56,26 @@ pipeline {
         }
 
         stage('Publish Project') {
-            steps {
-                bat """
+         steps {
+            bat """
                 if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
                 mkdir "%PUBLISH_DIR%"
 
                 "%MSBUILD_PATH%" "%PROJECT_FILE%" ^
                 /p:Configuration=%BUILD_CONFIG% ^
-                /p:OutDir="%PUBLISH_DIR%\\" ^
+                /p:OutDir=%PUBLISH_DIR%\\ ^
                 /t:Rebuild
                 """
 
-                bat """
-                echo ===============================
-                echo Checking Publish Directory
-                echo ===============================
-                dir "%PUBLISH_DIR%" /s
-                """
+        bat """
+        echo ===============================
+        echo Checking Publish Directory
+        echo ===============================
+        dir "%PUBLISH_DIR%" /s
+        """
             }
         }
+
 
         stage('Create MSI Installer') {
             steps {
