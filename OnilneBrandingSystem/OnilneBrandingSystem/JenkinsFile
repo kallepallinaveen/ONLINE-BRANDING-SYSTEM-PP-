@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     environment {
         GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
         BRANCH        = "master"
@@ -21,6 +25,12 @@ pipeline {
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git branch: "${BRANCH}", url: "${GIT_URL}"
@@ -29,7 +39,9 @@ pipeline {
 
         stage('Restore NuGet Packages') {
             steps {
-                bat "\"%NUGET_PATH%\" restore \"%SOLUTION_FILE%\""
+                bat """
+                "%NUGET_PATH%" restore "%SOLUTION_FILE%"
+                """
             }
         }
 
@@ -38,7 +50,7 @@ pipeline {
                 bat """
                 "%MSBUILD_PATH%" "%SOLUTION_FILE%" ^
                 /p:Configuration=%BUILD_CONFIG% ^
-                /t:Build
+                /t:Rebuild
                 """
             }
         }
@@ -46,42 +58,48 @@ pipeline {
         stage('Publish Project') {
             steps {
                 bat """
-                if not exist "%PUBLISH_DIR%" mkdir "%PUBLISH_DIR%"
+                if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
+                mkdir "%PUBLISH_DIR%"
 
                 "%MSBUILD_PATH%" "%PROJECT_FILE%" ^
                 /p:Configuration=%BUILD_CONFIG% ^
                 /p:DeployOnBuild=true ^
                 /p:WebPublishMethod=FileSystem ^
-                /p:PublishUrl=%PUBLISH_DIR% ^
-                /p:DeleteExistingFiles=true
+                /p:PublishUrl="%PUBLISH_DIR%" ^
+                /p:DeleteExistingFiles=true ^
+                /t:Build
                 """
+
+                dir "%PUBLISH_DIR%"
             }
         }
 
-     stage('Create MSI Installer') {
-    steps {
-        bat """
-        "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
-        -cg AppFiles ^
-        -dr INSTALLFOLDER ^
-        -srd ^
-        -gg ^
-        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
+        stage('Create MSI Installer') {
+            steps {
+                bat """
+                "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
+                -cg AppFiles ^
+                -dr INSTALLFOLDER ^
+                -srd ^
+                -gg ^
+                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
 
-        "%WIX_BIN%\\candle.exe" ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
-        -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
+                "%WIX_BIN%\\candle.exe" ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
+                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
 
-        "%WIX_BIN%\\light.exe" ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
-        OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
-        -out "%MSI_OUTPUT%"
-        """
+                "%WIX_BIN%\\light.exe" ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
+                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
+                -out "%MSI_OUTPUT%"
+                """
+
+                if (!fileExists(env.MSI_OUTPUT)) {
+                    error "MSI file was not created!"
                 }
             }
-
-
+        }
 
         stage('Install MSI') {
             steps {
@@ -94,7 +112,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build, MSI creation, and installation completed successfully"
+            echo "✅ Build, Publish, MSI creation, and installation completed successfully"
         }
         failure {
             echo "❌ Pipeline failed"
