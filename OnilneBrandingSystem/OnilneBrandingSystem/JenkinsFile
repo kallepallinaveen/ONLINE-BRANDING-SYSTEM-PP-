@@ -6,22 +6,25 @@ pipeline {
     }
 
     environment {
-        GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
-        BRANCH        = "master"
+    GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
+    BRANCH        = "master"
 
-        SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
-        PROJECT_FILE  = "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj"
+    SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
+    PROJECT_FILE  = "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj"
 
-        BUILD_CONFIG  = "Release"
+    BUILD_CONFIG  = "Release"
 
-        MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
-        NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
+    MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
+    NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
 
-        PUBLISH_DIR   = "C:\\Jenkins\\OnlineBranding_Publish"
-        MSI_OUTPUT    = "C:\\Jenkins\\OnlineBrandingSystem.msi"
+    PUBLISH_DIR   = "C:\\Jenkins\\OnlineBranding_Publish"
 
-        WIX_BIN       = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
-    }
+    // 👇 Build number added here
+    MSI_OUTPUT    = "C:\\Jenkins\\OnlineBrandingSystem_${BUILD_NUMBER}.msi"
+
+    WIX_BIN       = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
+             }
+
 
     stages {
 
