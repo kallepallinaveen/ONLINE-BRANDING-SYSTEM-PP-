@@ -6,25 +6,26 @@ pipeline {
     }
 
     environment {
-    GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
-    BRANCH        = "master"
+        GIT_URL       = "https://github.com/kallepallinaveen/ONLINE-BRANDING-SYSTEM-PP-.git"
+        BRANCH        = "master"
 
-    SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
-    PROJECT_FILE  = "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj"
+        SOLUTION_FILE = "OnilneBrandingSystem/OnilneBrandingSystem.sln"
+        PROJECT_FILE  = "OnilneBrandingSystem\\OnilneBrandingSystem\\OnilneBrandingSystem.csproj"
 
-    BUILD_CONFIG  = "Release"
+        BUILD_CONFIG  = "Release"
 
-    MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
-    NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
+        MSBUILD_PATH  = "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe"
+        NUGET_PATH    = "C:\\Program Files\\NuGet\\nuget.exe"
 
-    PUBLISH_DIR   = "C:\\Jenkins\\OnlineBranding_Publish"
+        PUBLISH_DIR   = "C:\\Jenkins\\OnlineBranding_Publish"
+        MSI_OUTPUT    = "C:\\Jenkins\\OnlineBrandingSystem_${BUILD_NUMBER}.msi"
 
-    // 👇 Build number added here
-    MSI_OUTPUT    = "C:\\Jenkins\\OnlineBrandingSystem_${BUILD_NUMBER}.msi"
+        WIX_BIN       = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
 
-    WIX_BIN       = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
-             }
-
+        SITE_NAME     = "OnlineBrandingSite"
+        APP_POOL      = "OnlineBrandingAppPool"
+        SITE_PORT     = "8085"
+    }
 
     stages {
 
@@ -34,7 +35,7 @@ pipeline {
             }
         }
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 git branch: "${BRANCH}", url: "${GIT_URL}"
             }
@@ -42,9 +43,7 @@ pipeline {
 
         stage('Restore NuGet Packages') {
             steps {
-                bat """
-                "%NUGET_PATH%" restore "%SOLUTION_FILE%"
-                """
+                bat "\"%NUGET_PATH%\" restore \"%SOLUTION_FILE%\""
             }
         }
 
@@ -59,8 +58,8 @@ pipeline {
         }
 
         stage('Publish Project') {
-         steps {
-            bat """
+            steps {
+                bat """
                 if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
                 mkdir "%PUBLISH_DIR%"
 
@@ -70,29 +69,12 @@ pipeline {
                 /t:Rebuild
                 """
 
-        bat """
-        echo ===============================
-        echo Checking Publish Directory
-        echo ===============================
-        dir "%PUBLISH_DIR%" /s
-        """
+                bat "dir \"%PUBLISH_DIR%\" /s"
             }
         }
 
-
-                stage('Create MSI Installer') {
+        stage('Create MSI Installer') {
             steps {
-
-                script {
-                    if (!fileExists(env.PUBLISH_DIR)) {
-                        error "Publish directory does not exist!"
-                    }
-                }
-
-                bat """
-                dir "%PUBLISH_DIR%"
-                """
-
                 bat """
                 "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
                 -cg AppFiles ^
@@ -115,11 +97,49 @@ pipeline {
             }
         }
 
-
         stage('Install MSI') {
             steps {
+                bat "msiexec /i \"%MSI_OUTPUT%\" /quiet /norestart"
+            }
+        }
+
+        stage('Configure IIS Site') {
+            steps {
                 bat """
-                msiexec /i "%MSI_OUTPUT%" /quiet /norestart
+                powershell -NoProfile -ExecutionPolicy Bypass -Command "
+
+                Import-Module WebAdministration
+
+                \$siteName = '${SITE_NAME}'
+                \$appPool = '${APP_POOL}'
+                \$physicalPath = '${PUBLISH_DIR}'
+                \$port = ${SITE_PORT}
+
+                Write-Host 'Checking App Pool...'
+
+                if (!(Test-Path IIS:\\AppPools\\\$appPool)) {
+                    New-WebAppPool -Name \$appPool
+                    Write-Host 'App Pool Created'
+                } else {
+                    Write-Host 'App Pool Already Exists'
+                }
+
+                Write-Host 'Checking Website...'
+
+                if (!(Test-Path IIS:\\Sites\\\$siteName)) {
+                    New-Website -Name \$siteName `
+                                -Port \$port `
+                                -PhysicalPath \$physicalPath `
+                                -ApplicationPool \$appPool
+                    Write-Host 'Website Created'
+                } else {
+                    Write-Host 'Website Already Exists'
+                }
+
+                Start-Website -Name \$siteName
+
+                Write-Host 'IIS Configuration Completed Successfully'
+                "
                 """
             }
         }
@@ -128,11 +148,11 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build, Publish, MSI creation, and installation completed successfully"
+            echo "✅ Full CI/CD Pipeline Executed Successfully"
+            echo "🌐 Access your application at: http://localhost:${SITE_PORT}"
         }
         failure {
-            echo "❌ Pipeline failed"
+            echo "❌ Pipeline Failed"
         }
     }
 }
-
