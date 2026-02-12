@@ -57,49 +57,50 @@ pipeline {
 
         stage('Publish Project') {
             steps {
-                bat """
-                if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
-                mkdir "%PUBLISH_DIR%"
+              bat """
+        if exist "%PUBLISH_DIR%" rmdir /s /q "%PUBLISH_DIR%"
+        mkdir "%PUBLISH_DIR%"
 
-                "%MSBUILD_PATH%" "%PROJECT_FILE%" ^
-                /p:Configuration=%BUILD_CONFIG% ^
-                /p:DeployOnBuild=true ^
-                /p:WebPublishMethod=FileSystem ^
-                /p:PublishUrl="%PUBLISH_DIR%" ^
-                /p:DeleteExistingFiles=true ^
-                /t:Build
-                """
+        "%MSBUILD_PATH%" "%PROJECT_FILE%" ^
+        /p:Configuration=%BUILD_CONFIG% ^
+        /p:OutDir="%PUBLISH_DIR%\\" ^
+        /t:Rebuild
+        """
 
-                bat 'dir "%PUBLISH_DIR%"'
+        bat """
+        echo ===============================
+        echo Checking Publish Directory
+        echo ===============================
+        dir "%PUBLISH_DIR%" /s
+        """
             }
         }
 
-        stage('Create MSI Installer') {
-            steps {
-                bat """
-                "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
-                -cg AppFiles ^
-                -dr INSTALLFOLDER ^
-                -srd ^
-                -gg ^
-                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
 
-                "%WIX_BIN%\\candle.exe" ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wxs ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs ^
-                -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\
+         stage('Create MSI Installer') {
+                steps {
 
-                "%WIX_BIN%\\light.exe" ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Product.wixobj ^
-                OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wixobj ^
-                -out "%MSI_OUTPUT%"
-                """
-
-                script {
-                    if (!fileExists(env.MSI_OUTPUT)) {
-                        error "MSI file was not created!"
+                    script {
+                        if (!fileExists(env.PUBLISH_DIR)) {
+                            error "Publish directory does not exist!"
+                        }
                     }
-                }
+
+                    bat """
+                    dir "%PUBLISH_DIR%"
+                    """
+
+                    bat """
+                    "%WIX_BIN%\\heat.exe" dir "%PUBLISH_DIR%" ^
+                    -cg AppFiles ^
+                    -dr INSTALLFOLDER ^
+                    -srd ^
+                    -gg ^
+                    -out OnilneBrandingSystem\\OnilneBrandingSystem\\Installer\\Files.wxs
+                    """
+                        }
+                    }
+
             }
         }
 
