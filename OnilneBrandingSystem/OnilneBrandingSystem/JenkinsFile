@@ -3,6 +3,7 @@ pipeline {
 
     options {
         skipDefaultCheckout(true)
+        buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
     environment {
@@ -73,6 +74,16 @@ pipeline {
             }
         }
 
+        stage('Clean Old MSI Files') {
+            steps {
+                powershell '''
+                $msiPath = "C:\\Jenkins"
+                Get-ChildItem $msiPath -Filter "*.msi" -ErrorAction SilentlyContinue | Remove-Item -Force
+                Write-Host "Old MSI files removed"
+                '''
+            }
+        }
+
         stage('Create MSI Installer') {
             steps {
                 bat """
@@ -103,8 +114,8 @@ pipeline {
             }
         }
 
-            stage('Configure IIS Site') {
-               steps {
+        stage('Configure IIS Site') {
+            steps {
                 powershell '''
                 Import-Module WebAdministration
 
@@ -142,7 +153,6 @@ pipeline {
                 '''
             }
         }
-
 
     }
 
