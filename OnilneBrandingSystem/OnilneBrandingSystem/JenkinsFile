@@ -28,7 +28,7 @@ pipeline {
         SITE_PORT     = "8089"
     }
 
-    stages {`
+    stages {
 
         stage('Clean Workspace') {
             steps {
