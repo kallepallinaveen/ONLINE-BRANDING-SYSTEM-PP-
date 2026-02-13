@@ -1,3 +1,8 @@
 powershell [guid]::NewGuid() ====== create a new guid 
 
 "ade581d6-6ab0-440e-aab0-4fc3c7c97d7f"
+
+
+<httpModules>
+      <add name="ApplicationInsightsWebTracking" type="Microsoft.ApplicationInsights.Web.ApplicationInsightsHttpModule, Microsoft.AI.Web"/>
+    </httpModules>
