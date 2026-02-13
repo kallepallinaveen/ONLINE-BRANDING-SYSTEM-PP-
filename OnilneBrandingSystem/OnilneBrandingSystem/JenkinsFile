@@ -25,10 +25,10 @@ pipeline {
 
         SITE_NAME     = "OnlineBrandingSite"
         APP_POOL      = "OnlineBrandingAppPool"
-        SITE_PORT     = "8085"
+        SITE_PORT     = "8089"
     }
 
-    stages {
+    stages {`
 
         stage('Clean Workspace') {
             steps {
@@ -122,7 +122,7 @@ pipeline {
                 $siteName = "OnlineBrandingSite"
                 $appPool = "OnlineBrandingAppPool"
                 $physicalPath = "C:\\Jenkins\\OnlineBranding_Publish"
-                $port = 8085
+                $port = 8089
 
                 Write-Host "Checking App Pool..."
 
